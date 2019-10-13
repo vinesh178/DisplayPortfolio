@@ -10,6 +10,8 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 
 import org.jsoup.Connection.Method;
 import org.jsoup.Connection.Response;
@@ -19,12 +21,33 @@ import org.jsoup.select.Elements;
 
 public class Portfolio {
 
-	public static void main(String[] args) throws IOException {
+	public static void main(String[] args) throws IOException, InterruptedException, ExecutionException {
 
 		getExchangeRate();
-		System.out.println(getPortfolioValue());
 
-		Document sensexDoc = Jsoup.connect("https://www.moneycontrol.com").get();
+		CompletableFuture<Void> portfolioFuture = CompletableFuture.runAsync(() -> {
+			try {
+				getPortfolioValue();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		});
+
+		getSensexData();
+		portfolioFuture.get();
+
+	}
+
+	public static void getSensexData() {
+
+		Document sensexDoc = null;
+		try {
+			sensexDoc = Jsoup.connect("https://www.moneycontrol.com").get();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 
 		Elements table = sensexDoc.getElementsByClass("rhsglTbl").eq(1);
 
@@ -32,7 +55,6 @@ public class Portfolio {
 
 		System.out.println(rows.get(0).getElementsByTag("tr").get(0).text());
 		System.out.println(rows.get(1).getElementsByTag("tr").get(0).text());
-
 	}
 
 	public static String getExchangeRate() {
@@ -55,7 +77,7 @@ public class Portfolio {
 		return s.toString();
 	}
 
-	public static String getPortfolioValue() throws IOException {
+	public static void getPortfolioValue() throws IOException {
 
 		Boolean IsCookieFileExist = Files.exists(Paths.get("C:\\workspace\\vrcookie.txt"), LinkOption.NOFOLLOW_LINKS);
 		Map<String, String> cookieContent = new HashMap<String, String>();
@@ -99,7 +121,9 @@ public class Portfolio {
 		String portValueChange = valueResearch.getElementsByClass("Portfolio-value-change").get(0).childNode(0)
 				.toString();
 
-		return "Value Research portfolio details : " + portValue.trim().concat(" | ").concat(portValueChange.trim());
+		System.out.println(
+				"Value Research portfolio details : " + portValue.trim().concat(" | ").concat(portValueChange.trim()));
+
 	}
 
 }
