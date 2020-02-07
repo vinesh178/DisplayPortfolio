@@ -1,129 +1,131 @@
 package test.display.portfolio;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.LinkOption;
-import java.nio.file.Paths;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Properties;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-
-import org.jsoup.Connection.Method;
-import org.jsoup.Connection.Response;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
 
+import java.io.IOException;
+import java.util.concurrent.ExecutionException;
+
 public class Portfolio {
 
-	public static void main(String[] args) throws IOException, InterruptedException, ExecutionException {
+    public static void main(String[] args) throws IOException, InterruptedException, ExecutionException {
 
-		getExchangeRate();
+        getExchangeRateFromTransferwise();
+        getSensexData();
+        getVasData();
+        getIooData();
+        getIAFData();
+        getIEMData();
+        getGoldData();
 
-		CompletableFuture<Void> portfolioFuture = CompletableFuture.runAsync(() -> {
-			try {
-				getPortfolioValue();
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		});
+    }
 
-		getSensexData();
-		portfolioFuture.get();
+    public static void getSensexData() {
 
-	}
+        Document sensexDoc = null;
+        try {
+            sensexDoc = Jsoup.connect("https://www.moneycontrol.com").get();
+        } catch (IOException e) {
+            System.out.println("Error in getting sensex doc: " + e.getMessage());
+        }
 
-	public static void getSensexData() {
+        Elements table = sensexDoc.getElementsByClass("rhsglTbl").eq(1);
 
-		Document sensexDoc = null;
-		try {
-			sensexDoc = Jsoup.connect("https://www.moneycontrol.com").get();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+        Elements rows = table.select("tr");
 
-		Elements table = sensexDoc.getElementsByClass("rhsglTbl").eq(1);
+        System.out.println(rows.get(0).getElementsByTag("tr").get(0).text());
+        System.out.println(rows.get(1).getElementsByTag("tr").get(0).text());
+    }
 
-		Elements rows = table.select("tr");
 
-		System.out.println(rows.get(0).getElementsByTag("tr").get(0).text());
-		System.out.println(rows.get(1).getElementsByTag("tr").get(0).text());
-	}
+    public static void getExchangeRateFromTransferwise() {
 
-	public static String getExchangeRate() {
+        Document doc;
+        StringBuilder s = new StringBuilder();
+        try {
+            doc = Jsoup.connect("https://transferwise.com/au/currency-converter/aud-to-inr-rate").get();
+            s.append("Aud To Inr: ");
+            s.append(doc.getElementsByClass("text-success").first().text());
+            System.out.println(s.toString());
+        } catch (IOException e) {
+            System.out.println("Error getting exchange rate");
+        }
+    }
 
-		Document doc;
-		StringBuilder s = new StringBuilder();
-		try {
-			doc = Jsoup.connect("https://au.investing.com/currencies/aud-inr").get();
+    private static void getVasData() {
 
-			s.append("Aud To Inr: ");
-			s.append(doc.getElementById("_last_1493").text());
-			s.append(" Change: ");
-			s.append(doc.getElementById("_chg_1493").text());
-			System.out.println(s.toString());
-			return s.toString();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+        Document doc;
+        StringBuilder s = new StringBuilder();
+        try {
+            doc = Jsoup.connect("https://www.morningstar.com.au/ETFs/NewsAndQuotes/VAS").get();
 
-		return s.toString();
-	}
+            s.append("VAS:  ");
+            s.append(doc.getElementsByClass("N_QPriceLeft").text());
+            System.out.println(s.toString());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
-	public static void getPortfolioValue() throws IOException {
+    private static void getIooData() {
 
-		Boolean IsCookieFileExist = Files.exists(Paths.get("C:\\workspace\\vrcookie.txt"), LinkOption.NOFOLLOW_LINKS);
-		Map<String, String> cookieContent = new HashMap<String, String>();
+        Document doc;
+        StringBuilder s = new StringBuilder();
+        try {
+            doc = Jsoup.connect("https://www.morningstar.com.au/ETFs/NewsAndQuotes/IOO").get();
 
-		if (IsCookieFileExist) {
+            s.append("GLB:  ");
+            s.append(doc.getElementsByClass("N_QPriceLeft").text());
+            System.out.println(s.toString());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
-			File existingCookieFile = new File("C:\\workspace\\vrcookie.txt");
+    private static void getIEMData() {
 
-			Properties properties = new Properties();
-			properties.load(new FileInputStream(existingCookieFile));
+        Document doc;
+        StringBuilder s = new StringBuilder();
+        try {
+            doc = Jsoup.connect("https://www.morningstar.com.au/ETFs/NewsAndQuotes/IEM").get();
 
-			for (String key : properties.stringPropertyNames()) {
-				cookieContent.put(key, properties.get(key).toString());
-			}
+            s.append("EMR:  ");
+            s.append(doc.getElementsByClass("N_QPriceLeft").text());
+            System.out.println(s.toString());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
-		} else {
+    private static void getIAFData() {
 
-			Response response = Jsoup.connect("https://www.valueresearchonline.com/registration/loginprocess.asp")
-					.userAgent("Mozilla/5.0").timeout(10 * 1000).method(Method.POST).data("ref", "%2F%3F")
-					.data("username", "vinesh178").data("password", "Summer11").data("btn_submit", "Log In")
-					.followRedirects(true).execute();
+        Document doc;
+        StringBuilder s = new StringBuilder();
+        try {
+            doc = Jsoup.connect("https://www.morningstar.com.au/ETFs/NewsAndQuotes/IAF").get();
 
-			cookieContent = response.cookies();
+            s.append("BND:  ");
+            s.append(doc.getElementsByClass("N_QPriceLeft").text());
+            System.out.println(s.toString());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
-			// save cookie to file
-			File cookieFile = new File("C:\\workspace\\vrcookie.txt");
-			Properties properties = new Properties();
+    private static void getGoldData() {
 
-			for (Map.Entry<String, String> entry : cookieContent.entrySet()) {
-				properties.put(entry.getKey(), entry.getValue());
-			}
+        Document doc;
+        StringBuilder s = new StringBuilder();
+        try {
+            doc = Jsoup.connect("https://www.morningstar.com.au/ETFs/NewsAndQuotes/GOLD").get();
 
-			properties.store(new FileOutputStream(cookieFile), null);
-
-		}
-
-		Document valueResearch = Jsoup.connect("https://www.valueresearchonline.com/port/default.asp?")
-				.cookies(cookieContent).get();
-
-		String portValue = valueResearch.getElementsByClass("Portfolio-value").get(0).childNode(0).toString();
-		String portValueChange = valueResearch.getElementsByClass("Portfolio-value-change").get(0).childNode(0)
-				.toString();
-
-		System.out.println(
-				"Value Research portfolio details : " + portValue.trim().concat(" | ").concat(portValueChange.trim()));
-
-	}
+            s.append("GLD:  ");
+            s.append(doc.getElementsByClass("N_QPriceLeft").text());
+            System.out.println(s.toString());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
 }
